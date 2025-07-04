@@ -1,0 +1,33 @@
+name: Deploy Keycloak
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Build Docker image
+      run: docker build -t keycloak-app .
+      
+    - name: Run tests
+      run: |
+        docker run -d --name keycloak-test -p 8080:8080 keycloak-app
+        sleep 30
+        curl -f http://localhost:8080/health || exit 1
+        docker stop keycloak-test && docker rm keycloak-test
+        
+    - name: Deploy to production
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      run: |
+        echo "Deploying to production..."
+        # Adicione aqui seus comandos de deploy
+        # docker push keycloak-app
+        # kubectl apply -f k8s/ 
